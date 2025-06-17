@@ -42,7 +42,8 @@ test.describe('Core Requirements Tests', () => {
     
     // Check basic HTML structure
     await expect(page.locator('html[lang="en"]')).toBeVisible();
-    await expect(page.locator('head title')).toBeVisible();
-    await expect(page.locator('meta[charset="UTF-8"]')).toBeVisible();
+    // Check title exists (but don't check visibility since it's in head)
+    await expect(page).toHaveTitle('Jakarta Map - OpenStreetMap');
+    await expect(page.locator('meta[charset="UTF-8"]')).toHaveAttribute('charset', 'UTF-8');
   });
 });

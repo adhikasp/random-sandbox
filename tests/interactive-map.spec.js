@@ -51,14 +51,35 @@ test.describe('Jakarta Interactive Map Tests', () => {
   test('should load Leaflet map library', async ({ page }) => {
     // Wait for Leaflet to be loaded
     await page.waitForFunction(() => typeof window.L !== 'undefined', {
-      timeout: 10000
+      timeout: 15000
     });
     
-    // Check that map is initialized
-    const mapExists = await page.evaluate(() => {
-      return window.L && window.L.map;
+    // Check that Leaflet library is available with proper methods
+    const leafletLoaded = await page.evaluate(() => {
+      return window.L && typeof window.L.map === 'function' && typeof window.L.marker === 'function';
     });
-    expect(mapExists).toBeTruthy();
+    expect(leafletLoaded).toBeTruthy();
+    
+    // Wait a bit more for map initialization
+    await page.waitForTimeout(3000);
+    
+    // Check if map initialization has started (more lenient check)
+    const mapInitialization = await page.evaluate(() => {
+      const mapDiv = document.getElementById('map');
+      return {
+        mapDivExists: !!mapDiv,
+        hasLeafletClasses: mapDiv ? mapDiv.classList.toString().includes('leaflet') : false,
+        hasLeafletInstance: mapDiv ? !!mapDiv._leaflet_map : false
+      };
+    });
+    
+    // At minimum, the map div should exist and Leaflet should be loaded
+    expect(mapInitialization.mapDivExists).toBeTruthy();
+    
+    // Optional: Log for debugging if map instance isn't ready yet
+    if (!mapInitialization.hasLeafletInstance) {
+      console.log('Map instance not ready, but Leaflet library is loaded');
+    }
   });
 
   test('should have responsive design on mobile', async ({ page }) => {

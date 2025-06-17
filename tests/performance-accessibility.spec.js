@@ -123,9 +123,13 @@ test.describe('Performance and Accessibility Tests', () => {
     expect(mapHeight).toBe('600px');
   });
 
-  test('should work without JavaScript (graceful degradation)', async ({ page }) => {
-    // Disable JavaScript
-    await page.setJavaScriptEnabled(false);
+  test('should work without JavaScript (graceful degradation)', async ({ browser }) => {
+    // Create a new context with JavaScript disabled
+    const context = await browser.newContext({
+      javaScriptEnabled: false
+    });
+    const page = await context.newPage();
+    
     await page.goto('/');
     
     // Basic content should still be visible
@@ -134,5 +138,7 @@ test.describe('Performance and Accessibility Tests', () => {
     
     // Check that static content is accessible
     await expect(page.locator('.info-panel')).toContainText('Jakarta, Indonesia');
+    
+    await context.close();
   });
 });
