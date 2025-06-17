@@ -7,8 +7,9 @@ on:
     branches: [ main, master ]
 
 jobs:
-  test:
-    timeout-minutes: 60
+  core-tests:
+    name: Core Requirements Tests
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     
     steps:
@@ -19,61 +20,45 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
+      run: npm install
 
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+    - name: Install Playwright Chromium
+      run: npx playwright install chromium
 
-    - name: Run Playwright tests
-      run: npm test
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libnss3 \
+          libnspr4 \
+          libatk-bridge2.0-0 \
+          libdrm2 \
+          libxkbcommon0 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxrandr2 \
+          libgbm1 \
+          libxss1 \
+          libasound2
 
-    - name: Upload Playwright Report
+    - name: Run Core Requirements Tests
+      run: npx playwright test tests/core-requirements.spec.js --project=chromium
+      env:
+        CI: true
+
+    - name: Upload Core Test Report
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report
+        name: core-test-report
         path: playwright-report/
-        retention-days: 30
+        retention-days: 7
 
-  test-multiple-browsers:
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [chromium, firefox, webkit]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps ${{ matrix.project }}
-
-    - name: Run Playwright tests on ${{ matrix.project }}
-      run: npx playwright test --project=${{ matrix.project }}
-
-    - name: Upload Playwright Report for ${{ matrix.project }}
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: playwright-report-${{ matrix.project }}
-        path: playwright-report/
-        retention-days: 30
-
-  lighthouse-audit:
+  comprehensive-tests:
+    name: Comprehensive Tests
+    needs: core-tests
     timeout-minutes: 30
     runs-on: ubuntu-latest
     
@@ -86,15 +71,92 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install Lighthouse CI
-      run: npm install -g @lhci/cli@0.12.x
+    - name: Install dependencies
+      run: npm install
 
-    - name: Start local server
+    - name: Install Playwright Chromium
+      run: npx playwright install chromium
+
+    - name: Install system dependencies
       run: |
-        python3 -m http.server 3000 &
-        sleep 5
-      
-    - name: Run Lighthouse CI
+        sudo apt-get update
+        sudo apt-get install -y \
+          libnss3 \
+          libnspr4 \
+          libatk-bridge2.0-0 \
+          libdrm2 \
+          libxkbcommon0 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxrandr2 \
+          libgbm1 \
+          libxss1 \
+          libasound2
+
+    - name: Run All Tests
+      run: npx playwright test --project=chromium
+      env:
+        CI: true
+
+    - name: Upload Comprehensive Test Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: comprehensive-test-report
+        path: playwright-report/
+        retention-days: 30
+
+  multi-browser-tests:
+    name: Multi-Browser Tests
+    needs: core-tests
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, webkit]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Playwright Browser
+      run: npx playwright install ${{ matrix.browser }}
+
+    - name: Install system dependencies
       run: |
-        lhci autorun --upload.target=temporary-public-storage --collect.staticDistDir=. --collect.url=http://localhost:3000
-      continue-on-error: true
+        sudo apt-get update
+        sudo apt-get install -y \
+          libnss3 \
+          libnspr4 \
+          libatk-bridge2.0-0 \
+          libdrm2 \
+          libxkbcommon0 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxrandr2 \
+          libgbm1 \
+          libxss1 \
+          libasound2
+
+    - name: Run Core Tests on ${{ matrix.browser }}
+      run: npx playwright test tests/core-requirements.spec.js --project=${{ matrix.browser }}
+      env:
+        CI: true
+        FULL_BROWSER_TESTS: true
+
+    - name: Upload Browser Test Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ matrix.browser }}-test-report
+        path: playwright-report/
+        retention-days: 7

@@ -3,6 +3,8 @@ const { test, expect } = require('@playwright/test');
 test.describe('Jakarta Interactive Map Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Wait for page to be fully loaded
+    await page.waitForLoadState('networkidle');
   });
 
   test('should display "Interactive Map" text', async ({ page }) => {
@@ -48,7 +50,9 @@ test.describe('Jakarta Interactive Map Tests', () => {
 
   test('should load Leaflet map library', async ({ page }) => {
     // Wait for Leaflet to be loaded
-    await page.waitForFunction(() => typeof window.L !== 'undefined');
+    await page.waitForFunction(() => typeof window.L !== 'undefined', {
+      timeout: 10000
+    });
     
     // Check that map is initialized
     const mapExists = await page.evaluate(() => {
@@ -61,11 +65,37 @@ test.describe('Jakarta Interactive Map Tests', () => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
     
+    // Reload to apply mobile styles
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+    
     // Check that elements are still visible and properly sized
     await expect(page.locator('.header')).toBeVisible();
     await expect(page.locator('#map')).toBeVisible();
     
     // On mobile, map height should be 400px
     await expect(page.locator('#map')).toHaveCSS('height', '400px');
+  });
+
+  test('should have proper meta tags', async ({ page }) => {
+    // Check for proper meta tags
+    await expect(page.locator('meta[charset]')).toHaveAttribute('charset', 'UTF-8');
+    await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', 'width=device-width, initial-scale=1.0');
+  });
+
+  test('should load external Leaflet resources', async ({ page }) => {
+    // Check that Leaflet CSS is loaded
+    const leafletCssLoaded = await page.evaluate(() => {
+      const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+      return links.some(link => link.href.includes('leaflet'));
+    });
+    expect(leafletCssLoaded).toBeTruthy();
+
+    // Check that Leaflet JS is loaded
+    const leafletJsLoaded = await page.evaluate(() => {
+      const scripts = Array.from(document.querySelectorAll('script[src]'));
+      return scripts.some(script => script.src.includes('leaflet'));
+    });
+    expect(leafletJsLoaded).toBeTruthy();
   });
 });
