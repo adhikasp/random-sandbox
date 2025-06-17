@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jakarta Map - OpenStreetMap</title>
+    <title>Jakarta Map - OpenStreetMap with Overpass Query</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -43,6 +43,7 @@
             padding: 20px;
             max-width: 1200px;
             margin: 0 auto;
+            position: relative;
         }
         
         #map {
@@ -51,6 +52,93 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border: 2px solid #ddd;
+        }
+        
+        .controls-panel {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .controls-panel h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .query-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .query-controls label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .query-controls select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+        }
+        
+        .query-controls button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .query-controls button:hover {
+            background-color: #2980b9;
+        }
+        
+        .query-controls button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .clear-btn {
+            background-color: #e74c3c !important;
+        }
+        
+        .clear-btn:hover {
+            background-color: #c0392b !important;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .status.loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
         
         .info-panel {
@@ -90,23 +178,62 @@
             #map {
                 height: 400px;
             }
+            
+            .query-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .query-controls select,
+            .query-controls button {
+                width: 100%;
+                margin: 2px 0;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Jakarta Interactive Map</h1>
-        <p>Powered by OpenStreetMap & Leaflet.js</p>
+        <h1>Jakarta Interactive Map with Overpass Query</h1>
+        <p>Powered by OpenStreetMap, Leaflet.js & Overpass API</p>
     </div>
     
     <div class="map-container">
+        <div class="controls-panel">
+            <h3>Query OpenStreetMap Features</h3>
+            <div class="query-controls">
+                <label for="amenitySelect">Select Feature:</label>
+                <select id="amenitySelect">
+                    <option value="convenience">Convenience Stores</option>
+                    <option value="restaurant">Restaurants</option>
+                    <option value="cafe">Cafes</option>
+                    <option value="hospital">Hospitals</option>
+                    <option value="school">Schools</option>
+                    <option value="bank">Banks</option>
+                    <option value="pharmacy">Pharmacies</option>
+                    <option value="fuel">Gas Stations</option>
+                    <option value="atm">ATMs</option>
+                    <option value="supermarket">Supermarkets</option>
+                    <option value="hotel">Hotels</option>
+                    <option value="police">Police Stations</option>
+                </select>
+                <button id="queryBtn">Query Current View</button>
+                <button id="clearBtn" class="clear-btn">Clear Results</button>
+                <label>
+                    <input type="checkbox" id="autoQuery" checked> Auto-query on map move
+                </label>
+            </div>
+            <div id="status" class="status" style="display: none;"></div>
+        </div>
+        
         <div id="map"></div>
         
         <div class="info-panel">
             <h3>Map Information</h3>
             <p><strong>Location:</strong> Jakarta, Indonesia</p>
             <p><strong>Map Source:</strong> OpenStreetMap contributors</p>
-            <p><strong>Features:</strong> Interactive zooming, panning, and marker placement</p>
+            <p><strong>Features:</strong> Interactive querying of OpenStreetMap data via Overpass API</p>
+            <p><strong>Auto-loaded:</strong> Convenience stores are automatically loaded when the map loads</p>
             
             <div class="coordinates">
                 <strong>Jakarta Coordinates:</strong><br>
@@ -135,20 +262,209 @@
             minZoom: 3
         }).addTo(map);
         
-        // Add a marker for Jakarta with popup
-        const jakartaMarker = L.marker(jakartaCoords).addTo(map);
-        jakartaMarker.bindPopup(`
-            <div style="text-align: center;">
-                <h3 style="margin: 0 0 10px 0; color: #2c3e50;">Jakarta</h3>
-                <p style="margin: 0; font-size: 14px;">Capital of Indonesia</p>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: #7f8c8d;">
-                    Lat: ${jakartaCoords[0]}<br>
-                    Lng: ${jakartaCoords[1]}
-                </p>
-            </div>
-        `).openPopup();
+        // Layer group for query results
+        let queryResultsLayer = L.layerGroup().addTo(map);
         
-        // Add some notable Jakarta landmarks
+        // Elements
+        const amenitySelect = document.getElementById('amenitySelect');
+        const queryBtn = document.getElementById('queryBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const autoQueryCheckbox = document.getElementById('autoQuery');
+        const statusDiv = document.getElementById('status');
+        
+        // Overpass API configuration
+        const overpassUrl = 'https://overpass-api.de/api/interpreter';
+        
+        // Feature icons mapping
+        const featureIcons = {
+            convenience: '🏪',
+            restaurant: '🍽️',
+            cafe: '☕',
+            hospital: '🏥',
+            school: '🏫',
+            bank: '🏦',
+            pharmacy: '💊',
+            fuel: '⛽',
+            atm: '🏧',
+            supermarket: '🛒',
+            hotel: '🏨',
+            police: '👮'
+        };
+        
+        // Show status message
+        function showStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // Create custom icon for features
+        function createFeatureIcon(amenityType) {
+            const icon = featureIcons[amenityType] || '📍';
+            return L.divIcon({
+                html: `<div style="background: white; border: 2px solid #3498db; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${icon}</div>`,
+                className: 'custom-div-icon',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+        }
+        
+        // Build Overpass query
+        function buildOverpassQuery(amenityType, bounds) {
+            const south = bounds.getSouth();
+            const west = bounds.getWest();
+            const north = bounds.getNorth();
+            const east = bounds.getEast();
+            
+            return `
+                [out:json][timeout:25];
+                (
+                  node["amenity"="${amenityType}"](${south},${west},${north},${east});
+                  way["amenity"="${amenityType}"](${south},${west},${north},${east});
+                  relation["amenity"="${amenityType}"](${south},${west},${north},${east});
+                );
+                out geom;
+            `;
+        }
+        
+        // Query Overpass API
+        async function queryOverpass(amenityType) {
+            try {
+                showStatus('Querying OpenStreetMap data...', 'loading');
+                queryBtn.disabled = true;
+                
+                const bounds = map.getBounds();
+                const query = buildOverpassQuery(amenityType, bounds);
+                
+                const response = await fetch(overpassUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `data=${encodeURIComponent(query)}`
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayResults(data, amenityType);
+                
+            } catch (error) {
+                console.error('Error querying Overpass API:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                queryBtn.disabled = false;
+            }
+        }
+        
+        // Display query results on map
+        function displayResults(data, amenityType) {
+            // Clear existing results
+            queryResultsLayer.clearLayers();
+            
+            let count = 0;
+            
+            data.elements.forEach(element => {
+                let lat, lng, name = 'Unknown';
+                
+                // Handle different element types
+                if (element.type === 'node') {
+                    lat = element.lat;
+                    lng = element.lon;
+                } else if (element.type === 'way' && element.center) {
+                    lat = element.center.lat;
+                    lng = element.center.lon;
+                } else if (element.geometry && element.geometry.length > 0) {
+                    // Use first point of geometry
+                    lat = element.geometry[0].lat;
+                    lng = element.geometry[0].lon;
+                } else {
+                    return; // Skip if no coordinates available
+                }
+                
+                // Get name
+                if (element.tags && element.tags.name) {
+                    name = element.tags.name;
+                } else if (element.tags && element.tags.brand) {
+                    name = element.tags.brand;
+                } else {
+                    name = amenityType.charAt(0).toUpperCase() + amenityType.slice(1);
+                }
+                
+                // Create marker
+                const marker = L.marker([lat, lng], {
+                    icon: createFeatureIcon(amenityType)
+                });
+                
+                // Create popup content
+                let popupContent = `
+                    <div style="text-align: center; min-width: 150px;">
+                        <h4 style="margin: 0 0 8px 0; color: #2c3e50;">${name}</h4>
+                        <p style="margin: 0; font-size: 12px; color: #7f8c8d;">
+                            Type: ${amenityType}<br>
+                            Lat: ${lat.toFixed(6)}<br>
+                            Lng: ${lng.toFixed(6)}
+                        </p>
+                `;
+                
+                // Add additional tags if available
+                if (element.tags) {
+                    if (element.tags.opening_hours) {
+                        popupContent += `<p style="margin: 5px 0 0 0; font-size: 11px;"><strong>Hours:</strong> ${element.tags.opening_hours}</p>`;
+                    }
+                    if (element.tags.phone) {
+                        popupContent += `<p style="margin: 2px 0 0 0; font-size: 11px;"><strong>Phone:</strong> ${element.tags.phone}</p>`;
+                    }
+                    if (element.tags.website) {
+                        popupContent += `<p style="margin: 2px 0 0 0; font-size: 11px;"><strong>Website:</strong> <a href="${element.tags.website}" target="_blank">Link</a></p>`;
+                    }
+                }
+                
+                popupContent += '</div>';
+                
+                marker.bindPopup(popupContent);
+                queryResultsLayer.addLayer(marker);
+                count++;
+            });
+            
+            showStatus(`Found ${count} ${amenityType}${count !== 1 ? 's' : ''} in current view`, 'success');
+        }
+        
+        // Clear results
+        function clearResults() {
+            queryResultsLayer.clearLayers();
+            showStatus('Results cleared', 'success');
+        }
+        
+        // Event listeners
+        queryBtn.addEventListener('click', () => {
+            const selectedAmenity = amenitySelect.value;
+            queryOverpass(selectedAmenity);
+        });
+        
+        clearBtn.addEventListener('click', clearResults);
+        
+        // Auto-query on map move (with debounce)
+        let moveTimeout;
+        map.on('moveend', () => {
+            if (autoQueryCheckbox.checked) {
+                clearTimeout(moveTimeout);
+                moveTimeout = setTimeout(() => {
+                    const selectedAmenity = amenitySelect.value;
+                    queryOverpass(selectedAmenity);
+                }, 1000); // 1 second delay after map stops moving
+            }
+        });
+        
+        // Add some notable Jakarta landmarks (keeping original functionality)
         const landmarks = [
             {
                 name: "Monas (National Monument)",
@@ -179,7 +495,15 @@
         
         // Add landmark markers
         landmarks.forEach(landmark => {
-            const marker = L.marker(landmark.coords).addTo(map);
+            const marker = L.marker(landmark.coords, {
+                icon: L.divIcon({
+                    html: `<div style="background: #e74c3c; border: 2px solid white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
+                    className: 'landmark-icon',
+                    iconSize: [25, 25],
+                    iconAnchor: [12.5, 12.5]
+                })
+            }).addTo(map);
+            
             marker.bindPopup(`
                 <div style="text-align: center;">
                     <h4 style="margin: 0 0 5px 0; color: #2c3e50;">${landmark.name}</h4>
@@ -210,8 +534,16 @@
         // Add scale control
         L.control.scale().addTo(map);
         
-        console.log('Jakarta Map loaded successfully!');
-        console.log('Map centered at:', jakartaCoords);
+        // Auto-load convenience stores when map is ready
+        map.whenReady(() => {
+            console.log('Jakarta Map with Overpass integration loaded successfully!');
+            console.log('Map centered at:', jakartaCoords);
+            
+            // Load convenience stores automatically
+            setTimeout(() => {
+                queryOverpass('convenience');
+            }, 1000);
+        });
     </script>
 </body>
 </html>
