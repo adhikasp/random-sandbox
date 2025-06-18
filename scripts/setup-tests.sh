@@ -17,6 +17,22 @@ npx playwright install chromium
 # Try to install system dependencies (if on Linux)
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "🐧 Installing system dependencies for Linux..."
+    
+    # Detect Ubuntu version and use appropriate package names
+    LIBASOUND_PACKAGE="libasound2t64"  # Default to new package name
+    
+    if command -v lsb_release &> /dev/null; then
+        UBUNTU_VERSION=$(lsb_release -rs | cut -d. -f1)
+        echo "Detected Ubuntu version: $(lsb_release -rs)"
+        
+        # For Ubuntu versions older than 24, use the old package name
+        if [[ $UBUNTU_VERSION -lt 24 ]]; then
+            LIBASOUND_PACKAGE="libasound2"
+        fi
+    fi
+    
+    echo "Using audio package: $LIBASOUND_PACKAGE"
+    
     sudo apt-get update && sudo apt-get install -y \
         libnss3 \
         libnspr4 \
@@ -28,7 +44,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         libxrandr2 \
         libgbm1 \
         libxss1 \
-        libasound2 || echo "⚠️  Some system dependencies may not be available"
+        $LIBASOUND_PACKAGE || echo "⚠️  Some system dependencies may not be available"
 fi
 
 echo "✅ Setup complete!"

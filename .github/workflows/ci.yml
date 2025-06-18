@@ -41,7 +41,7 @@ jobs:
           libxrandr2 \
           libgbm1 \
           libxss1 \
-          libasound2
+          libasound2t64
 
     - name: Run Core Requirements Tests
       run: npx playwright test tests/core-requirements.spec.js --project=chromium
@@ -91,7 +91,7 @@ jobs:
           libxrandr2 \
           libgbm1 \
           libxss1 \
-          libasound2
+          libasound2t64
 
     - name: Run All Tests
       run: npx playwright test --project=chromium
@@ -145,7 +145,7 @@ jobs:
           libxrandr2 \
           libgbm1 \
           libxss1 \
-          libasound2
+          libasound2t64
 
     - name: Run Core Tests on ${{ matrix.browser }}
       run: npx playwright test tests/core-requirements.spec.js --project=${{ matrix.browser }}
