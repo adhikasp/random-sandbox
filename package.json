@@ -1,0 +1,60 @@
+{
+  "name": "supermap",
+  "version": "2.0.0",
+  "description": "The next-generation mapping platform that's better than Google Maps",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000 || python -m SimpleHTTPServer 8000",
+    "build": "./deploy.sh build",
+    "deploy": "./deploy.sh github",
+    "serve": "./deploy.sh serve",
+    "status": "./deploy.sh status",
+    "test": "echo \"SuperMap tests would go here\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/supermap.git"
+  },
+  "keywords": [
+    "maps",
+    "navigation",
+    "jakarta",
+    "indonesia",
+    "openstreetmap",
+    "leaflet",
+    "pwa",
+    "progressive-web-app",
+    "offline-maps",
+    "real-time",
+    "traffic",
+    "weather",
+    "geocoding",
+    "search",
+    "open-source",
+    "privacy-first"
+  ],
+  "author": "SuperMap Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/supermap/issues"
+  },
+  "homepage": "https://yourusername.github.io/supermap",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "devDependencies": {},
+  "dependencies": {},
+  "peerDependencies": {},
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/yourusername"
+  },
+  "config": {
+    "port": 8000
+  }
+}

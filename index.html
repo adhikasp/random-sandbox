@@ -3,546 +3,558 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jakarta Map - OpenStreetMap with Overpass Query</title>
+    <title>SuperMap - Better Than Google Maps</title>
+    <meta name="description" content="The next-generation mapping platform that goes beyond what Google Maps offers">
+    <meta name="keywords" content="maps, navigation, Jakarta, Indonesia, OpenStreetMap, GPS, directions">
+    <meta name="author" content="SuperMap Team">
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin=""/>
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SuperMap">
+    <link rel="manifest" href="manifest.json">
     
-    <!-- Custom CSS -->
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMjU2M2ViIiByeD0iNCIvPgo8cGF0aCBkPSJtNSAxOC4zIDIgMkw5IDI2LjdsMyAzaDMuNWwyLTIgNiAyIDItMmgyLjVsMi0yIDItMnYtMi41TDI3IDE4IDI0IDE1bC0yLTJIMTlsLTItMlY5aC0yTDEzIDExSDEwTDggMTNWMThaIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIyIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K">
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body {
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+            box-sizing: border-box;
         }
-        
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Header */
         .header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+            box-shadow: var(--shadow);
         }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 300;
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--primary-color);
         }
-        
-        .header p {
-            margin: 5px 0 0 0;
-            opacity: 0.8;
-            font-size: 14px;
-        }
-        
-        .map-container {
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+
+        .search-container {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 20px;
             position: relative;
         }
-        
-        #map {
-            height: 600px;
+
+        .search-input {
             width: 100%;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: 2px solid #ddd;
+            padding: 12px 20px 12px 45px;
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            font-size: 14px;
+            background: var(--background);
+            transition: all 0.2s;
         }
-        
-        .controls-panel {
-            background: white;
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--background);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 350px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            transition: transform 0.3s;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-section {
             padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 1px solid var(--border);
         }
-        
-        .controls-panel h3 {
-            margin-top: 0;
-            color: #2c3e50;
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Main Map Area */
+        .map-area {
+            flex: 1;
+            position: relative;
+            margin-top: 60px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Map Controls */
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .control-group {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .layer-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .layer-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .layer-option:hover {
+            background: var(--background);
+        }
+
+        .layer-option input[type="radio"] {
+            margin: 0;
+        }
+
+        /* Floating Panel */
+        .floating-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            min-width: 300px;
+            z-index: 1000;
+        }
+
+        .weather-widget {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .weather-icon {
+            font-size: 24px;
+        }
+
+        .weather-info h3 {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .weather-info p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
             margin-bottom: 15px;
         }
-        
-        .query-controls {
+
+        .quick-action {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            flex-direction: column;
             align-items: center;
-        }
-        
-        .query-controls label {
-            font-weight: 500;
-            color: #2c3e50;
-        }
-        
-        .query-controls select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            font-size: 14px;
-        }
-        
-        .query-controls button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        
-        .query-controls button:hover {
-            background-color: #2980b9;
-        }
-        
-        .query-controls button:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        
-        .clear-btn {
-            background-color: #e74c3c !important;
-        }
-        
-        .clear-btn:hover {
-            background-color: #c0392b !important;
-        }
-        
-        .status {
-            margin-top: 10px;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        .status.loading {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        
-        .status.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .status.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .info-panel {
-            background: white;
-            padding: 20px;
-            margin-top: 20px;
+            gap: 5px;
+            padding: 12px;
+            border: 1px solid var(--border);
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: var(--background);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: var(--text-primary);
         }
-        
-        .info-panel h3 {
-            margin-top: 0;
-            color: #2c3e50;
+
+        .quick-action:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
         }
-        
-        .coordinates {
-            background: #ecf0f1;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            margin-top: 10px;
+
+        .quick-action i {
+            font-size: 18px;
         }
-        
+
+        .quick-action span {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            padding: 12px 20px;
+            border-radius: 25px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            z-index: 1000;
+            display: none;
+        }
+
+        .status-bar.show {
+            display: block;
+        }
+
+        /* Mobile Responsive */
         @media (max-width: 768px) {
-            .header {
-                padding: 15px;
-            }
-            
-            .header h1 {
-                font-size: 24px;
-            }
-            
-            .map-container {
-                padding: 10px;
-            }
-            
-            #map {
-                height: 400px;
-            }
-            
-            .query-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .query-controls select,
-            .query-controls button {
+            .sidebar {
+                position: absolute;
+                z-index: 2000;
                 width: 100%;
-                margin: 2px 0;
+                max-width: 350px;
             }
+
+            .search-container {
+                display: none;
+            }
+
+            .floating-panel {
+                left: 10px;
+                right: 10px;
+                min-width: auto;
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Custom Popup Styles */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+        }
+
+        .custom-popup {
+            padding: 15px;
+            min-width: 200px;
+        }
+
+        .popup-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .popup-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-color);
+            color: white;
+            font-size: 14px;
+        }
+
+        .popup-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .popup-details {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Jakarta Interactive Map with Overpass Query</h1>
-    </div>
-    
-    <div class="map-container">
-        <div class="controls-panel">
-            <h3>Query OpenStreetMap Features</h3>
-            <div class="query-controls">
-                <label for="amenitySelect">Select Feature:</label>
-                <select id="amenitySelect">
-                    <option value="convenience">Convenience Stores</option>
-                    <option value="restaurant">Restaurants</option>
-                    <option value="cafe">Cafes</option>
-                    <option value="hospital">Hospitals</option>
-                    <option value="school">Schools</option>
-                    <option value="bank">Banks</option>
-                    <option value="pharmacy">Pharmacies</option>
-                    <option value="fuel">Gas Stations</option>
-                    <option value="atm">ATMs</option>
-                    <option value="supermarket">Supermarkets</option>
-                    <option value="hotel">Hotels</option>
-                    <option value="police">Police Stations</option>
-                </select>
-                <button id="queryBtn">Query Current View</button>
-                <button id="clearBtn" class="clear-btn">Clear Results</button>
-                <label>
-                    <input type="checkbox" id="autoQuery" checked> Auto-query on map move
-                </label>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-map-marked-alt"></i>
+                SuperMap
             </div>
-            <div id="status" class="status" style="display: none;"></div>
-        </div>
-        
-        <div id="map"></div>
-        
-        <div class="info-panel">
-            <h3>Map Information</h3>
-            <p><strong>Location:</strong> Jakarta, Indonesia</p>
-            <p><strong>Map Source:</strong> OpenStreetMap contributors</p>
-            <p><strong>Features:</strong> Interactive querying of OpenStreetMap data via Overpass API</p>
-            <p><strong>Auto-loaded:</strong> Convenience stores are automatically loaded when the map loads</p>
             
-            <div class="coordinates">
-                <strong>Jakarta Coordinates:</strong><br>
-                Latitude: -6.2088°<br>
-                Longitude: 106.8456°
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search places, addresses, or coordinates..." id="searchInput">
+            </div>
+            
+            <div class="header-controls">
+                <button class="btn btn-secondary" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="btn btn-primary" id="shareLocation">
+                    <i class="fas fa-share-alt"></i>
+                    Share
+                </button>
+                <button class="btn btn-secondary" id="fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <i class="fas fa-layer-group"></i>
+                    Map Layers
+                </div>
+                <div class="layer-selector">
+                    <label class="layer-option">
+                        <input type="radio" name="baseLayer" value="osm" checked>
+                        <span>OpenStreetMap</span>
+                    </label>
+                    <label class="layer-option">
+                        <input type="radio" name="baseLayer" value="satellite">
+                        <span>Satellite</span>
+                    </label>
+                    <label class="layer-option">
+                        <input type="radio" name="baseLayer" value="terrain">
+                        <span>Terrain</span>
+                    </label>
+                    <label class="layer-option">
+                        <input type="radio" name="baseLayer" value="dark">
+                        <span>Dark Mode</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <i class="fas fa-eye"></i>
+                    Data Overlays
+                </div>
+                <div class="layer-selector">
+                    <label class="layer-option">
+                        <input type="checkbox" id="trafficLayer">
+                        <span>Live Traffic</span>
+                    </label>
+                    <label class="layer-option">
+                        <input type="checkbox" id="weatherLayer">
+                        <span>Weather Radar</span>
+                    </label>
+                    <label class="layer-option">
+                        <input type="checkbox" id="transitLayer">
+                        <span>Public Transit</span>
+                    </label>
+                    <label class="layer-option">
+                        <input type="checkbox" id="bikeLayer">
+                        <span>Bike Lanes</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <i class="fas fa-search-location"></i>
+                    Quick Find
+                </div>
+                <div class="quick-actions">
+                    <div class="quick-action" data-query="restaurant">
+                        <i class="fas fa-utensils"></i>
+                        <span>Food</span>
+                    </div>
+                    <div class="quick-action" data-query="hospital">
+                        <i class="fas fa-hospital"></i>
+                        <span>Medical</span>
+                    </div>
+                    <div class="quick-action" data-query="fuel">
+                        <i class="fas fa-gas-pump"></i>
+                        <span>Gas</span>
+                    </div>
+                    <div class="quick-action" data-query="bank">
+                        <i class="fas fa-university"></i>
+                        <span>Banks</span>
+                    </div>
+                    <div class="quick-action" data-query="hotel">
+                        <i class="fas fa-bed"></i>
+                        <span>Hotels</span>
+                    </div>
+                    <div class="quick-action" data-query="school">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Schools</span>
+                    </div>
+                    <div class="quick-action" data-query="pharmacy">
+                        <i class="fas fa-pills"></i>
+                        <span>Pharmacy</span>
+                    </div>
+                    <div class="quick-action" data-query="atm">
+                        <i class="fas fa-credit-card"></i>
+                        <span>ATM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Map Area -->
+        <div class="map-area">
+            <div id="map"></div>
+            
+            <!-- Status Bar -->
+            <div class="status-bar" id="statusBar">
+                <span id="statusText">Ready</span>
+            </div>
+
+            <!-- Floating Panel -->
+            <div class="floating-panel">
+                <div class="weather-widget">
+                    <div class="weather-icon">🌤️</div>
+                    <div class="weather-info">
+                        <h3>Jakarta Weather</h3>
+                        <p id="weatherInfo">Loading weather data...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
-    
-    <script>
-        // Jakarta coordinates
-        const jakartaCoords = [-6.2088, 106.8456];
-        
-        // Initialize the map
-        const map = L.map('map').setView(jakartaCoords, 12);
-        
-        // Add OpenStreetMap tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19,
-            minZoom: 3
-        }).addTo(map);
-        
-        // Layer group for query results
-        let queryResultsLayer = L.layerGroup().addTo(map);
-        
-        // Elements
-        const amenitySelect = document.getElementById('amenitySelect');
-        const queryBtn = document.getElementById('queryBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const autoQueryCheckbox = document.getElementById('autoQuery');
-        const statusDiv = document.getElementById('status');
-        
-        // Overpass API configuration
-        const overpassUrl = 'https://overpass-api.de/api/interpreter';
-        
-        // Feature icons mapping
-        const featureIcons = {
-            convenience: '🏪',
-            restaurant: '🍽️',
-            cafe: '☕',
-            hospital: '🏥',
-            school: '🏫',
-            bank: '🏦',
-            pharmacy: '💊',
-            fuel: '⛽',
-            atm: '🏧',
-            supermarket: '🛒',
-            hotel: '🏨',
-            police: '👮'
-        };
-        
-        // Show status message
-        function showStatus(message, type = 'info') {
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            statusDiv.style.display = 'block';
-            
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusDiv.style.display = 'none';
-                }, 3000);
-            }
-        }
-        
-        // Create custom icon for features
-        function createFeatureIcon(amenityType) {
-            const icon = featureIcons[amenityType] || '📍';
-            return L.divIcon({
-                html: `<div style="background: white; border: 2px solid #3498db; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${icon}</div>`,
-                className: 'custom-div-icon',
-                iconSize: [30, 30],
-                iconAnchor: [15, 15]
-            });
-        }
-        
-        // Build Overpass query
-        function buildOverpassQuery(amenityType, bounds) {
-            const south = bounds.getSouth();
-            const west = bounds.getWest();
-            const north = bounds.getNorth();
-            const east = bounds.getEast();
-            
-            return `
-                [out:json][timeout:25];
-                (
-                  node["amenity"="${amenityType}"](${south},${west},${north},${east});
-                  way["amenity"="${amenityType}"](${south},${west},${north},${east});
-                  relation["amenity"="${amenityType}"](${south},${west},${north},${east});
-                );
-                out geom;
-            `;
-        }
-        
-        // Query Overpass API
-        async function queryOverpass(amenityType) {
-            try {
-                showStatus('Querying OpenStreetMap data...', 'loading');
-                queryBtn.disabled = true;
-                
-                const bounds = map.getBounds();
-                const query = buildOverpassQuery(amenityType, bounds);
-                
-                const response = await fetch(overpassUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `data=${encodeURIComponent(query)}`
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                displayResults(data, amenityType);
-                
-            } catch (error) {
-                console.error('Error querying Overpass API:', error);
-                showStatus(`Error: ${error.message}`, 'error');
-            } finally {
-                queryBtn.disabled = false;
-            }
-        }
-        
-        // Display query results on map
-        function displayResults(data, amenityType) {
-            // Clear existing results
-            queryResultsLayer.clearLayers();
-            
-            let count = 0;
-            
-            data.elements.forEach(element => {
-                let lat, lng, name = 'Unknown';
-                
-                // Handle different element types
-                if (element.type === 'node') {
-                    lat = element.lat;
-                    lng = element.lon;
-                } else if (element.type === 'way' && element.center) {
-                    lat = element.center.lat;
-                    lng = element.center.lon;
-                } else if (element.geometry && element.geometry.length > 0) {
-                    // Use first point of geometry
-                    lat = element.geometry[0].lat;
-                    lng = element.geometry[0].lon;
-                } else {
-                    return; // Skip if no coordinates available
-                }
-                
-                // Get name
-                if (element.tags && element.tags.name) {
-                    name = element.tags.name;
-                } else if (element.tags && element.tags.brand) {
-                    name = element.tags.brand;
-                } else {
-                    name = amenityType.charAt(0).toUpperCase() + amenityType.slice(1);
-                }
-                
-                // Create marker
-                const marker = L.marker([lat, lng], {
-                    icon: createFeatureIcon(amenityType)
-                });
-                
-                // Create popup content
-                let popupContent = `
-                    <div style="text-align: center; min-width: 150px;">
-                        <h4 style="margin: 0 0 8px 0; color: #2c3e50;">${name}</h4>
-                        <p style="margin: 0; font-size: 12px; color: #7f8c8d;">
-                            Type: ${amenityType}<br>
-                            Lat: ${lat.toFixed(6)}<br>
-                            Lng: ${lng.toFixed(6)}
-                        </p>
-                `;
-                
-                // Add additional tags if available
-                if (element.tags) {
-                    if (element.tags.opening_hours) {
-                        popupContent += `<p style="margin: 5px 0 0 0; font-size: 11px;"><strong>Hours:</strong> ${element.tags.opening_hours}</p>`;
-                    }
-                    if (element.tags.phone) {
-                        popupContent += `<p style="margin: 2px 0 0 0; font-size: 11px;"><strong>Phone:</strong> ${element.tags.phone}</p>`;
-                    }
-                    if (element.tags.website) {
-                        popupContent += `<p style="margin: 2px 0 0 0; font-size: 11px;"><strong>Website:</strong> <a href="${element.tags.website}" target="_blank">Link</a></p>`;
-                    }
-                }
-                
-                popupContent += '</div>';
-                
-                marker.bindPopup(popupContent);
-                queryResultsLayer.addLayer(marker);
-                count++;
-            });
-            
-            showStatus(`Found ${count} ${amenityType}${count !== 1 ? 's' : ''} in current view`, 'success');
-        }
-        
-        // Clear results
-        function clearResults() {
-            queryResultsLayer.clearLayers();
-            showStatus('Results cleared', 'success');
-        }
-        
-        // Event listeners
-        queryBtn.addEventListener('click', () => {
-            const selectedAmenity = amenitySelect.value;
-            queryOverpass(selectedAmenity);
-        });
-        
-        clearBtn.addEventListener('click', clearResults);
-        
-        // Auto-query on map move (with debounce)
-        let moveTimeout;
-        map.on('moveend', () => {
-            if (autoQueryCheckbox.checked) {
-                clearTimeout(moveTimeout);
-                moveTimeout = setTimeout(() => {
-                    const selectedAmenity = amenitySelect.value;
-                    queryOverpass(selectedAmenity);
-                }, 1000); // 1 second delay after map stops moving
-            }
-        });
-        
-        // Add some notable Jakarta landmarks (keeping original functionality)
-        const landmarks = [
-            {
-                name: "Monas (National Monument)",
-                coords: [-6.1754, 106.8272],
-                description: "Jakarta's iconic tower and symbol"
-            },
-            {
-                name: "Istiqlal Mosque",
-                coords: [-6.1702, 106.8317],
-                description: "The largest mosque in Southeast Asia"
-            },
-            {
-                name: "Jakarta Cathedral",
-                coords: [-6.1703, 106.8314],
-                description: "Historic Catholic cathedral"
-            },
-            {
-                name: "Kota Tua Jakarta",
-                coords: [-6.1352, 106.8133],
-                description: "Jakarta's historic old town"
-            },
-            {
-                name: "Soekarno-Hatta Airport",
-                coords: [-6.1256, 106.6558],
-                description: "Main international airport"
-            }
-        ];
-        
-        // Add landmark markers
-        landmarks.forEach(landmark => {
-            const marker = L.marker(landmark.coords, {
-                icon: L.divIcon({
-                    html: `<div style="background: #e74c3c; border: 2px solid white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
-                    className: 'landmark-icon',
-                    iconSize: [25, 25],
-                    iconAnchor: [12.5, 12.5]
-                })
-            }).addTo(map);
-            
-            marker.bindPopup(`
-                <div style="text-align: center;">
-                    <h4 style="margin: 0 0 5px 0; color: #2c3e50;">${landmark.name}</h4>
-                    <p style="margin: 0; font-size: 12px;">${landmark.description}</p>
-                </div>
-            `);
-        });
-        
-        // Add click event to map for showing coordinates
-        map.on('click', function(e) {
-            const lat = e.latlng.lat.toFixed(4);
-            const lng = e.latlng.lng.toFixed(4);
-            
-            L.popup()
-                .setLatLng(e.latlng)
-                .setContent(`
-                    <div style="text-align: center;">
-                        <h4 style="margin: 0 0 5px 0;">Clicked Location</h4>
-                        <p style="margin: 0; font-size: 12px;">
-                            Lat: ${lat}<br>
-                            Lng: ${lng}
-                        </p>
-                    </div>
-                `)
-                .openOn(map);
-        });
-        
-        // Add scale control
-        L.control.scale().addTo(map);
-        
-        // Auto-load convenience stores when map is ready
-        map.whenReady(() => {
-            console.log('Jakarta Map with Overpass integration loaded successfully!');
-            console.log('Map centered at:', jakartaCoords);
-            
-            // Load convenience stores automatically
-            setTimeout(() => {
-                queryOverpass('convenience');
-            }, 1000);
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
