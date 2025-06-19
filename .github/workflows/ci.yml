@@ -1,0 +1,162 @@
+name: CI - Playwright Tests
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  core-tests:
+    name: Core Requirements Tests
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Playwright Chromium
+      run: npx playwright install chromium
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libnss3 \
+          libnspr4 \
+          libatk-bridge2.0-0 \
+          libdrm2 \
+          libxkbcommon0 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxrandr2 \
+          libgbm1 \
+          libxss1 \
+          libasound2t64
+
+    - name: Run Core Requirements Tests
+      run: npx playwright test tests/core-requirements.spec.js --project=chromium
+      env:
+        CI: true
+
+    - name: Upload Core Test Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: core-test-report
+        path: playwright-report/
+        retention-days: 7
+
+  comprehensive-tests:
+    name: Comprehensive Tests
+    needs: core-tests
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Playwright Chromium
+      run: npx playwright install chromium
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libnss3 \
+          libnspr4 \
+          libatk-bridge2.0-0 \
+          libdrm2 \
+          libxkbcommon0 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxrandr2 \
+          libgbm1 \
+          libxss1 \
+          libasound2t64
+
+    - name: Run All Tests
+      run: npx playwright test --project=chromium
+      env:
+        CI: true
+
+    - name: Upload Comprehensive Test Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: comprehensive-test-report
+        path: playwright-report/
+        retention-days: 30
+
+  multi-browser-tests:
+    name: Multi-Browser Tests
+    needs: core-tests
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, webkit]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install Playwright Browser
+      run: npx playwright install ${{ matrix.browser }}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libnss3 \
+          libnspr4 \
+          libatk-bridge2.0-0 \
+          libdrm2 \
+          libxkbcommon0 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxrandr2 \
+          libgbm1 \
+          libxss1 \
+          libasound2t64
+
+    - name: Run Core Tests on ${{ matrix.browser }}
+      run: npx playwright test tests/core-requirements.spec.js --project=${{ matrix.browser }}
+      env:
+        CI: true
+        FULL_BROWSER_TESTS: true
+
+    - name: Upload Browser Test Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ matrix.browser }}-test-report
+        path: playwright-report/
+        retention-days: 7

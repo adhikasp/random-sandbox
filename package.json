@@ -1,0 +1,21 @@
+{
+  "name": "jakarta-interactive-map",
+  "version": "1.0.0",
+  "description": "Interactive map of Jakarta using OpenStreetMap and Leaflet.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:report": "playwright show-report",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.39.0"
+  },
+  "keywords": ["map", "jakarta", "leaflet", "openstreetmap"],
+  "author": "",
+  "license": "MIT"
+}
